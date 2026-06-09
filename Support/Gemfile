@@ -1,0 +1,11 @@
+# Dependencies for the GitHub Flavored Markdown preview command.
+# Installed once into TextMate's shared gem store via TextMate::Gems.setup.
+#
+#   redcarpet — GFM renderer (replaces the old Markdown.pl path)
+#   rouge     — pure-Ruby syntax highlighter (replaces the Python pygments dep)
+#
+# Versions are pinned to the last releases that support system Ruby 2.6.x.
+source "https://rubygems.org"
+
+gem "redcarpet", "3.6.1"
+gem "rouge", "3.30.0"
