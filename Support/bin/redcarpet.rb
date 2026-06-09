@@ -1,8 +1,11 @@
-#!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby
-# Usage: markdown-github.rb [<file>...]
+#!/usr/bin/env ruby
+# Usage: redcarpet.rb [<file>...]
 # Convert one or more GitHub Flavored Markdown files to HTML and print to
 # standard output. With no <file> or when <file> is "-", read GitHub Flavored
 # Markdown source text from standard input.
+#
+# Rendering uses Redcarpet for GFM and Rouge for code highlighting. Both gems
+# come from TextMate's shared gem store (see tm/gems) — no Python, no pygments.
 
 if ARGV.include?("--help")
   File.read(__FILE__).split("\n").grep(/^# /).each do |line|
@@ -11,28 +14,19 @@ if ARGV.include?("--help")
   exit 0
 end
 
-require "rubygems"
+require "#{ENV['TM_SUPPORT_PATH']}/lib/tm/gems"
+TextMate::Gems.setup(name: "Markdown (GitHub)")
 
-begin
-  require "redcarpet"
-  require "pygments"
-rescue LoadError
-  puts <<-EOS
-<p>Please install the Redcarpet and Pygments.rb RubyGems by running the following:</p>
+require "redcarpet"
+require "rouge"
 
-<pre><code>/usr/bin/gem install --user redcarpet pygments.rb</code></pre>
-EOS
-  exit 0
-end
-
-class PygmentsSmartyHTML < Redcarpet::Render::HTML
+class RougeSmartyHTML < Redcarpet::Render::HTML
   include Redcarpet::Render::SmartyPants
 
   def block_code(code, language)
-    language ||= "text"
-    Pygments.highlight(code, :lexer => language)
-  rescue
-    Pygments.highlight(code, :lexer => "text")
+    lexer = Rouge::Lexer.find_fancy(language) || Rouge::Lexers::PlainText.new
+    inner = Rouge::Formatters::HTML.new.format(lexer.lex(code))
+    %{<pre class="highlight"><code>#{inner}</code></pre>}
   end
 end
 
@@ -47,7 +41,7 @@ def markdown(text)
     :with_toc_data   => true,
     :hard_wrap       => true,
   }
-  renderer = PygmentsSmartyHTML.new(options)
+  renderer = RougeSmartyHTML.new(options)
   extensions = {
     :no_intra_emphasis   => true,
     :tables              => true,
@@ -62,5 +56,5 @@ def markdown(text)
   html
 end
 
-puts "<style>#{Pygments.css(:style => "colorful")}</style>"
+puts %{<style>#{Rouge::Themes::Github.render(scope: ".highlight")}</style>}
 puts markdown(ARGF.read)
