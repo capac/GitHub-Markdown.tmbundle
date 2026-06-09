@@ -15,7 +15,10 @@ if ARGV.include?("--help")
 end
 
 require "#{ENV['TM_SUPPORT_PATH']}/lib/tm/gems"
-TextMate::Gems.setup(name: "Markdown (GitHub)")
+# This script runs as $TM_MARKDOWN, invoked by the base Markdown bundle's
+# preview command, so TM_BUNDLE_SUPPORT points at *that* bundle. Resolve our
+# own Gemfile relative to this script instead.
+TextMate::Gems.setup(name: "Markdown (GitHub)", gemfile: File.expand_path("../Gemfile", __dir__))
 
 require "redcarpet"
 require "rouge"
